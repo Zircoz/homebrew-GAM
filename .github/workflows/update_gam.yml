@@ -1,0 +1,55 @@
+name: Update GAM
+
+on:
+  schedule:
+    - cron: '30 8 * * *' # 08:30 UTC = 14:00 IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update-gam:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Run update script
+        run: |
+          python3 scripts/update_gam.py
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Formula/gam7.rb
+          # Extract version from Formula/gam7.rb for commit message
+          VERSION=$(grep 'version "' Formula/gam7.rb | cut -d '"' -f 2)
+          git commit -m "Update gam to version $VERSION"
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'GAM Update Workflow Failed',
+              body: 'The automated GAM update workflow failed. Please check the [logs](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + '). @' + context.repo.owner,
+              assignees: [context.repo.owner]
+            })
