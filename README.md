@@ -4,9 +4,11 @@ This is a Homebrew tap for [GAM](https://github.com/GAM-team/GAM), a command lin
 
 ## Installation
 
+Replace `<user>` with the GitHub username or organization where this repository is hosted.
+
 ```bash
 brew tap <user>/gam
-brew install gam
+brew install gam7
 ```
 
 ## License
