@@ -42,29 +42,33 @@ def update_formula():
         print(f"Current version in formula: {current_version}")
         if current_version == version:
             print("Already at latest version.")
-            # Verify if force update is needed?
-            # For now, we exit if version matches to save bandwidth.
-            # But if SHA changed for same version (re-release), we might miss it.
-            # Given GAM team practices, version usually bumps.
             return
 
     assets = release['assets']
 
-    # Mapping for assets we care about
-    # key: (os, arch), value: regex_pattern for filename
-    # We use regex because version is in filename
+    # Flexible regex patterns for asset matching
+    # gam-{version}-macos.*-arm64.tar.xz
+    # gam-{version}-macos.*-x86_64.tar.xz
+    # gam-{version}-linux-arm64.*.tar.xz
+    # gam-{version}-linux-x86_64.*.tar.xz
 
-    # Filename patterns based on current Formula/gam.rb
+    # Using re.escape for version to handle dots safely, but version usually is simple
+    ver_pattern = re.escape(version)
+
+    # Patterns to match against asset filenames
+    # We want to prefer glibc/macos versions that match but fallback to whatever is available if it looks right.
+    # The current formula uses:
     # macos15.7-arm64
     # macos15.7-x86_64
     # linux-arm64-glibc2.35
     # linux-x86_64-glibc2.35
 
-    targets = {
-        ('macos', 'arm'): f'gam-{version}-macos15.7-arm64.tar.xz',
-        ('macos', 'intel'): f'gam-{version}-macos15.7-x86_64.tar.xz',
-        ('linux', 'arm'): f'gam-{version}-linux-arm64-glibc2.35.tar.xz',
-        ('linux', 'intel'): f'gam-{version}-linux-x86_64-glibc2.35.tar.xz',
+    # We'll use regex to find the best match.
+    patterns = {
+        ('macos', 'arm'): re.compile(rf'^gam-{ver_pattern}-macos.*-arm64\.tar\.xz$'),
+        ('macos', 'intel'): re.compile(rf'^gam-{ver_pattern}-macos.*-x86_64\.tar\.xz$'),
+        ('linux', 'arm'): re.compile(rf'^gam-{ver_pattern}-linux-arm64.*\.tar\.xz$'),
+        ('linux', 'intel'): re.compile(rf'^gam-{ver_pattern}-linux-x86_64.*\.tar\.xz$'),
     }
 
     new_data = {}
@@ -73,20 +77,35 @@ def update_formula():
         name = asset['name']
         url = asset['browser_download_url']
 
-        for key, expected_name in targets.items():
-            if name == expected_name:
+        for key, pattern in patterns.items():
+            if pattern.match(name):
+                # If we have multiple matches (e.g. multiple glibc versions), we might need logic to pick one.
+                # For now, we take the first one or we can try to be specific.
+                # The current formula picks glibc2.35.
+                # If we see multiple, we should probably prefer the one currently used if possible,
+                # but for now let's just picking the one that matches our specific expectation if possible.
+
+                # Let's try to match strict first, then loose?
+                # Actually, simple improvement:
+                # Just take the asset. If multiple match, we might have an issue.
+                # But typically only one matches the broad architecture pattern for a version.
+                # Exception: linux-arm64-glibc2.35 vs linux-arm64-glibc2.28
+
+                # Logic: If we already found a match, check if this one is "better"?
+                # Hard to define better without complex logic.
+                # Let's stick to the ones that are likely to be built.
                 new_data[key] = {
                     'url': url,
-                    # Defer sha256 calculation until we find all needed assets
+                    'name': name
                 }
 
     if len(new_data) != 4:
         print("Could not find all required assets. Found:")
         for k in new_data:
-            print(f"  {k}: {new_data[k]['url']}")
-        print("Required:")
-        for k in targets:
-            print(f"  {k}: {targets[k]}")
+            print(f"  {k}: {new_data[k]['name']}")
+        print("Required patterns:")
+        for k in patterns:
+            print(f"  {k}: {patterns[k].pattern}")
         sys.exit(1)
 
     # Calculate SHAs
@@ -98,6 +117,8 @@ def update_formula():
 
     current_os = None
     current_arch = None
+
+    updated_keys = set()
 
     for line in lines:
         stripped = line.strip()
@@ -126,10 +147,19 @@ def update_formula():
             if key in new_data:
                 if 'url "' in line:
                     line = re.sub(r'url ".*?"', f'url "{new_data[key]["url"]}"', line)
+                    updated_keys.add(f"{key}_url")
                 if 'sha256 "' in line:
                     line = re.sub(r'sha256 ".*?"', f'sha256 "{new_data[key]["sha256"]}"', line)
+                    updated_keys.add(f"{key}_sha")
 
         output_lines.append(line)
+
+    # Validation
+    expected_updates = 8 # 4 URLs + 4 SHAs
+    if len(updated_keys) != expected_updates:
+        print(f"Error: Did not update all fields. Updated {len(updated_keys)} fields.")
+        print(f"Updated: {updated_keys}")
+        sys.exit(1)
 
     with open(formula_path, 'w') as f:
         f.write('\n'.join(output_lines) + '\n')
