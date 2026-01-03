@@ -32,7 +32,7 @@ def update_formula():
 
     print(f"Latest version found: {version}")
 
-    formula_path = 'Formula/gam.rb'
+    formula_path = 'Formula/gam7.rb'
     with open(formula_path, 'r') as f:
         content = f.read()
 
@@ -164,7 +164,7 @@ def update_formula():
     with open(formula_path, 'w') as f:
         f.write('\n'.join(output_lines) + '\n')
 
-    print(f"Updated Formula/gam.rb to version {version}")
+    print(f"Updated Formula/gam7.rb to version {version}")
 
 if __name__ == '__main__':
     update_formula()

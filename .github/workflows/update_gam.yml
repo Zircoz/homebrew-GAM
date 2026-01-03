@@ -35,9 +35,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add Formula/gam.rb
-          # Extract version from Formula/gam.rb for commit message
-          VERSION=$(grep 'version "' Formula/gam.rb | cut -d '"' -f 2)
+          git add Formula/gam7.rb
+          # Extract version from Formula/gam7.rb for commit message
+          VERSION=$(grep 'version "' Formula/gam7.rb | cut -d '"' -f 2)
           git commit -m "Update gam to version $VERSION"
           git push
 

@@ -1,4 +1,4 @@
-class Gam < Formula
+class Gam7 < Formula
   desc "Command line management for Google Workspace"
   homepage "https://github.com/GAM-team/GAM"
   version "7.31.01"
