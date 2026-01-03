@@ -5,7 +5,7 @@ This is a Homebrew tap for [GAM](https://github.com/GAM-team/GAM), a command lin
 ## Installation
 
 ```bash
-brew tap <user>/gam
+brew tap Zircoz/gam
 brew install gam
 ```
 
