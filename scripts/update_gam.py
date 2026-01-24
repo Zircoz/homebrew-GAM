@@ -3,16 +3,23 @@ import urllib.request
 import hashlib
 import re
 import sys
+import argparse
 
-def get_latest_release():
-    url = "https://api.github.com/repos/gam-team/gam/releases/latest"
+def get_release(version=None):
+    if version:
+        url = f"https://api.github.com/repos/gam-team/gam/releases/tags/{version}"
+        print(f"Fetching release for tag: {version}")
+    else:
+        url = "https://api.github.com/repos/gam-team/gam/releases/latest"
+        print("Fetching latest release")
+
     req = urllib.request.Request(url)
     try:
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode())
         return data
     except Exception as e:
-        print(f"Error fetching releases: {e}")
+        print(f"Error fetching release: {e}")
         sys.exit(1)
 
 def calculate_sha256(url):
@@ -26,11 +33,15 @@ def calculate_sha256(url):
         sys.exit(1)
 
 def update_formula():
-    release = get_latest_release()
+    parser = argparse.ArgumentParser(description='Update GAM formula.')
+    parser.add_argument('--version', help='Specific version (tag) to update to (e.g., v7.0.0)')
+    args = parser.parse_args()
+
+    release = get_release(args.version)
     tag_name = release['tag_name']
     version = tag_name.lstrip('v')
 
-    print(f"Latest version found: {version}")
+    print(f"Target version found: {version}")
 
     formula_path = 'Formula/gam7.rb'
     with open(formula_path, 'r') as f:
@@ -52,18 +63,10 @@ def update_formula():
     # gam-{version}-linux-arm64.*.tar.xz
     # gam-{version}-linux-x86_64.*.tar.xz
 
-    # Using re.escape for version to handle dots safely, but version usually is simple
+    # Using re.escape for version to handle dots safely
     ver_pattern = re.escape(version)
 
     # Patterns to match against asset filenames
-    # We want to prefer glibc/macos versions that match but fallback to whatever is available if it looks right.
-    # The current formula uses:
-    # macos15.7-arm64
-    # macos15.7-x86_64
-    # linux-arm64-glibc2.35
-    # linux-x86_64-glibc2.35
-
-    # We'll use regex to find the best match.
     patterns = {
         ('macos', 'arm'): re.compile(rf'^gam-{ver_pattern}-macos.*-arm64\.tar\.xz$'),
         ('macos', 'intel'): re.compile(rf'^gam-{ver_pattern}-macos.*-x86_64\.tar\.xz$'),
@@ -79,21 +82,6 @@ def update_formula():
 
         for key, pattern in patterns.items():
             if pattern.match(name):
-                # If we have multiple matches (e.g. multiple glibc versions), we might need logic to pick one.
-                # For now, we take the first one or we can try to be specific.
-                # The current formula picks glibc2.35.
-                # If we see multiple, we should probably prefer the one currently used if possible,
-                # but for now let's just picking the one that matches our specific expectation if possible.
-
-                # Let's try to match strict first, then loose?
-                # Actually, simple improvement:
-                # Just take the asset. If multiple match, we might have an issue.
-                # But typically only one matches the broad architecture pattern for a version.
-                # Exception: linux-arm64-glibc2.35 vs linux-arm64-glibc2.28
-
-                # Logic: If we already found a match, check if this one is "better"?
-                # Hard to define better without complex logic.
-                # Let's stick to the ones that are likely to be built.
                 new_data[key] = {
                     'url': url,
                     'name': name
