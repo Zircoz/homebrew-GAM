@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '30 8 * * *' # 08:30 UTC = 14:00 IST
   workflow_dispatch:
+  repository_dispatch:
+    types: [gam-release]
 
 permissions:
   contents: write
@@ -22,8 +24,14 @@ jobs:
           python-version: '3.x'
 
       - name: Run update script
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
         run: |
-          python3 scripts/update_gam.py
+          if [ -n "$VERSION" ]; then
+            python3 scripts/update_gam.py --version "$VERSION"
+          else
+            python3 scripts/update_gam.py
+          fi
 
       - name: Check for changes
         id: git-check
