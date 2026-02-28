@@ -105,6 +105,8 @@ def update_formula():
 
     current_os = None
     current_arch = None
+    in_os_block = False
+    in_arch_block = False
 
     updated_keys = set()
 
@@ -115,19 +117,25 @@ def update_formula():
         if stripped.startswith('version "'):
             line = re.sub(r'version ".*?"', f'version "{version}"', line)
 
-        if stripped == 'on_macos do':
+        # OS-level state transitions (if OS.mac? / elsif OS.linux? syntax)
+        if stripped == 'if OS.mac?':
             current_os = 'macos'
-        elif stripped == 'on_linux do':
+            in_os_block = True
+        elif stripped == 'elsif OS.linux?':
             current_os = 'linux'
-        elif stripped == 'on_arm do':
+            # in_os_block stays True; inner arch block already closed by its own end
+        # Arch-level state transitions (only inside an OS block)
+        elif in_os_block and not in_arch_block and stripped == 'if Hardware::CPU.arm?':
             current_arch = 'arm'
-        elif stripped == 'on_intel do':
+            in_arch_block = True
+        elif in_arch_block and stripped == 'else':
             current_arch = 'intel'
-
-        if stripped == 'end':
-            if current_arch:
+        elif stripped == 'end':
+            if in_arch_block:
+                in_arch_block = False
                 current_arch = None
-            elif current_os:
+            elif in_os_block:
+                in_os_block = False
                 current_os = None
 
         if current_os and current_arch:
