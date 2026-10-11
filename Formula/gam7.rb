@@ -1,23 +1,23 @@
 class Gam7 < Formula
   desc "Command line management for Google Workspace"
   homepage "https://github.com/GAM-team/GAM"
-  version "7.48.24"
+  version "7.48.25"
 
   if OS.mac?
     if Hardware::CPU.arm?
-      url "https://github.com/GAM-team/GAM/releases/download/v7.48.24/gam-7.48.24-macos26.6-arm64.tar.xz"
-      sha256 "c342b1bce931cecb55526b7efbea6dfe5bb1078733f8bc386db171d9e2dfa821"
+      url "https://github.com/GAM-team/GAM/releases/download/v7.48.25/gam-7.48.25-macos26.6-arm64.tar.xz"
+      sha256 "95ef4c42ab8883066dd3a5fd992c38041b3585f58d59bbb13c2c95a287c1bb2e"
     else
-      url "https://github.com/GAM-team/GAM/releases/download/v7.48.24/gam-7.48.24-macos26.6-x86_64.tar.xz"
-      sha256 "991d6030ed6e3680589dcb9e151c01f9b67610e9f686ac8703d481adfbd6d97d"
+      url "https://github.com/GAM-team/GAM/releases/download/v7.48.25/gam-7.48.25-macos26.6-x86_64.tar.xz"
+      sha256 "bbd85f7b7c592377615687b7c68ce10435982ac8c738582bf7e51543f5c729c4"
     end
   elsif OS.linux?
     if Hardware::CPU.arm?
-      url "https://github.com/GAM-team/GAM/releases/download/v7.48.24/gam-7.48.24-linux-arm64-legacy.tar.xz"
-      sha256 "9494bce85c5a7b9536d921e1256aa9fa536c9ee1734bd72bb5f98e1ae2008a77"
+      url "https://github.com/GAM-team/GAM/releases/download/v7.48.25/gam-7.48.25-linux-arm64-legacy.tar.xz"
+      sha256 "40bdeab2341196582937d79916c77f296fa9af6f52096ed665cf10046f603dd2"
     else
-      url "https://github.com/GAM-team/GAM/releases/download/v7.48.24/gam-7.48.24-linux-x86_64-legacy.tar.xz"
-      sha256 "8fd52b826022b5a312955923ce7a90def2f29e49361163e2533a6481ca78a10b"
+      url "https://github.com/GAM-team/GAM/releases/download/v7.48.25/gam-7.48.25-linux-x86_64-legacy.tar.xz"
+      sha256 "539eb156c0885349c10f3c9e4a45e7eae55d13ef02b9be55f95b34464fce8cb7"
     end
   end
 
